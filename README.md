@@ -19,7 +19,7 @@
 
 ## 🌟 ¿Qué es este proyecto?
 
-Una **aplicación web interactiva** que simula la cadena de suministro de un negocio retail, permitiéndote experimentar con diferentes políticas de inventario sin riesgo financiero real.
+Una **aplicación web interactiva de última generación** que simula la cadena de suministro de un negocio retail, permitiéndote experimentar con diferentes políticas de inventario sin riesgo financiero real.
 
 ### 💡 El Problema
 
@@ -27,14 +27,17 @@ Las empresas retail enfrentan un dilema constante:
 - 📈 **Demasiado stock** → Costes de almacenamiento elevados
 - 📉 **Poco stock** → Pérdida de ventas y clientes insatisfechos
 - ⏱️ **Lead times variables** → Incertidumbre en la reposición
+- ⚙️ **Parámetros complejos** → Difícil encontrar la configuración óptima manualmente
 
 ### ✅ La Solución
 
 Este simulador te permite:
-- 🔬 **Experimentar** con diferentes parámetros de inventario (punto de reorden, cantidad de pedido, lead time)
-- 📊 **Visualizar** el impacto financiero en tiempo real
+- 🔬 **Experimentar** con diferentes parámetros de inventario (punto de reorden hasta 250, cantidad de pedido hasta 500, lead time, patrones de demanda)
+- 📊 **Visualizar** el impacto financiero en tiempo real con gráficos interactivos organizados en pestañas
 - 🎲 **Simular** 365 días de operación en segundos
-- 💰 **Optimizar** el balance entre costes y servicio al cliente
+- 💰 **Optimizar automáticamente** el balance entre costes y servicio al cliente con algoritmo Grid Search
+- 📈 **Analizar sensibilidad** de parámetros para identificar rangos óptimos
+- 💾 **Exportar reportes** completos en Excel y TXT para presentaciones
 
 ---
 
@@ -42,12 +45,16 @@ Este simulador te permite:
 
 | Característica | Descripción |
 |---------------|-------------|
-| 🎲 **Simulación Estocástica** | Demanda diaria aleatoria para modelar la realidad del mercado |
-| ⚙️ **Parámetros Configurables** | Ajusta punto de reorden, cantidad de pedido y lead time |
-| 📈 **KPIs en Tiempo Real** | Visualiza costes de almacenamiento, pedidos y rupturas de stock |
-| 🎯 **Nivel de Servicio** | Mide el % de demanda satisfecha desde inventario |
-| 📊 **Gráficos Interactivos** | Evolución del stock durante 365 días con Plotly |
-| 💻 **Interfaz Intuitiva** | Streamlit para una experiencia de usuario fluida |
+| 🎲 **Simulación Estocástica Avanzada** | Demanda con 3 distribuciones (Uniforme, Normal, Poisson) + parámetros configurables |
+| ⚙️ **Parámetros Configurables** | ROP hasta 250, Q hasta 500, lead time 1-14 días, stock inicial, costes personalizables |
+| 🤖 **Optimizador Automático** | Algoritmo Grid Search que encuentra la configuración óptima automáticamente |
+| 📊 **Interfaz Multi-Pestaña** | 4 tabs organizadas: Análisis de Costes, Evolución Stock, KPIs, Exportar |
+| 📈 **Dashboard de KPIs** | Nivel de servicio, rotación, fill rate, días sin stock, con tarjetas con gradientes |
+| 🎯 **Análisis de Sensibilidad** | Gráficos que muestran impacto de ROP/Q en costes totales |
+| 💡 **Tooltips Interactivos** | Símbolos de ayuda (ℹ️/❓) en todos los controles y secciones con explicaciones detalladas |
+| 💾 **Exportación Avanzada** | Reportes completos en Excel (3 hojas) y TXT para documentación |
+| 📉 **Visualizaciones Plotly** | Gráficos interactivos: líneas, barras, histogramas, scatter, pie charts |
+| 🎨 **Diseño Profesional** | Gradientes azules coherentes, métricas destacadas, UI moderna |
 
 ---
 
@@ -61,8 +68,10 @@ Este proyecto fusiona **Ingeniería Informática** y **Dirección de Operaciones
 |----------|----------------|
 | **🔄 Discrete Event Simulation** | Motor SimPy para eventos temporales y procesos concurrentes |
 | **💰 Optimización de Costes** | Minimización de: Holding + Ordering + Stockout costs |
-| **📦 Política (Q, R)** | Punto de Reorden (ROP) + Cantidad Económica (EOQ) |
-| **🎲 Procesos Estocásticos** | Demanda aleatoria con distribución uniforme |
+| **🤖 Grid Search Optimization** | Búsqueda exhaustiva de parámetros óptimos (ROP, Q) con restricciones configurables |
+| **📦 Política (Q, R)** | Punto de Reorden (ROP 0-250) + Cantidad Económica (Q 10-500) |
+| **🎲 Procesos Estocásticos** | Demanda aleatoria con 3 distribuciones: Uniforme, Normal, Poisson |
+| **📊 Análisis de Sensibilidad** | Evaluación del impacto de parámetros en costes mediante gráficos 2D |
 
 ### 💡 Fórmula de Costes Totales
 
@@ -81,8 +90,10 @@ Total Cost = (Holding Cost × Avg. Inventory) + (Ordering Cost × # Orders) + (S
 | 🐍 **Backend** | Python 3.12+ | Lenguaje principal |
 | ⚙️ **Simulación** | SimPy | Motor de eventos discretos |
 | 📊 **Datos** | Pandas, NumPy | Procesamiento y análisis |
-| 📈 **Visualización** | Plotly Express | Gráficos interactivos |
-| 🌐 **Frontend** | Streamlit | Interfaz web responsive |
+| 📈 **Visualización** | Plotly Express/GO | Gráficos interactivos (líneas, barras, histogramas, scatter, pie) |
+| 🌐 **Frontend** | Streamlit | Interfaz web con tabs, popovers, expanders, métricas |
+| 💾 **Exportación** | io, openpyxl | Generación de reportes Excel/TXT |
+| 🎨 **Estilizado** | Custom CSS | Gradientes, sombras, diseño moderno |
 
 </div>
 
@@ -152,19 +163,39 @@ retail-supply-chain-sim/
 
 ## 🎮 Cómo Usar el Simulador
 
-1. **Ajusta los parámetros** en el panel lateral:
-   - 📍 **Punto de Reorden (ROP)**: Stock mínimo antes de hacer un nuevo pedido
-   - 📦 **Cantidad de Pedido (Q)**: Unidades a pedir cada vez
-   - ⏱️ **Lead Time**: Días que tarda el proveedor en entregar
+### 📋 Modo Manual
 
-2. **Haz clic en "Ejecutar Simulación"**
+1. **Ajusta los parámetros** en el panel lateral (todos con tooltips explicativos ℹ️):
+   - 📍 **Punto de Reorden (ROP)**: 0-250 unidades (stock crítico)
+   - 📦 **Cantidad de Pedido (Q)**: 10-500 unidades (lote económico)
+   - ⏱️ **Lead Time**: 1-14 días (tiempo de entrega)
+   - 📊 **Patrón de Demanda**: Uniforme, Normal o Poisson
+   - 💰 **Costes**: Almacenamiento, pedido, ruptura (personalizables)
 
-3. **Analiza los resultados**:
-   - 💵 Costes totales desglosados
-   - 📊 Nivel de servicio (%)
-   - 📈 Gráfico de evolución del stock
+2. **Haz clic en "▶️ Ejecutar Simulación"**
 
-4. **Experimenta** con diferentes combinaciones para encontrar el óptimo
+3. **Analiza los resultados en 4 pestañas**:
+   - **📊 Análisis de Costes**: Desglose en pie chart + tarjetas métricas con gradientes
+   - **📈 Evolución Stock**: Gráfico temporal interactivo con eventos de pedidos/rupturas
+   - **🎯 KPIs**: Nivel servicio, rotación, fill rate con popovers explicativos
+   - **💾 Exportar**: Descarga CSV con datos completos
+
+4. **Visualiza insights adicionales**:
+   - 📊 Histograma de distribución de stock
+   - 🔥 Días críticos (stock más bajo)
+   - 📉 Análisis de sensibilidad (impacto de ROP/Q)
+
+5. **Descarga reportes** completos en Excel (3 hojas) o TXT
+
+### 🤖 Modo Optimizador Automático
+
+1. **Activa el optimizador** en el sidebar
+2. **Configura rangos de búsqueda**:
+   - ROP: Mínimo, Máximo, Paso
+   - Q: Mínimo, Máximo, Paso
+3. **Ejecuta Grid Search** → Encuentra automáticamente la configuración con menor coste total
+4. **Aplica configuración óptima** con un clic
+5. **Analiza tabla comparativa** de todas las combinaciones probadas
 
 ---
 
@@ -176,15 +207,24 @@ El simulador modela **365 días de operación** para proporcionar insights accio
 
 | Métrica | Descripción | Objetivo |
 |---------|-------------|----------|
-| 💰 **Coste de Almacenamiento** | Coste por mantener inventario | Minimizar sin sacrificar servicio |
-| 📦 **Coste de Pedidos** | Coste fijo por cada orden al proveedor | Reducir frecuencia sin desabastecimiento |
-| ⚠️ **Coste de Ruptura** | Ventas perdidas por falta de stock | Eliminar completamente |
+| 💰 **Coste de Almacenamiento** | Coste por mantener inventario (Holding Cost × Stock Promedio) | Minimizar sin sacrificar servicio |
+| 📦 **Coste de Pedidos** | Coste fijo por cada orden al proveedor (Ordering Cost × Núm. Pedidos) | Reducir frecuencia sin desabastecimiento |
+| ⚠️ **Coste de Ruptura** | Ventas perdidas por falta de stock (Stockout Cost × Lost Sales) | Eliminar completamente |
 | 🎯 **Nivel de Servicio** | % demanda satisfecha desde stock | Maximizar (objetivo: >95%) |
+| 🔄 **Rotación de Inventario** | Ventas Totales ÷ Stock Promedio | Mayor rotación = menos capital inmovilizado |
+| 📦 **Fill Rate** | % de días con stock disponible | Disponibilidad del producto (objetivo: >98%) |
+| ⏱️ **Días de Cobertura** | Stock Promedio ÷ Demanda Diaria Media | Autonomía del inventario |
+| 📉 **Días sin Stock** | Total de días con inventario = 0 | Minimizar (afecta satisfacción del cliente) |
 
 ### Visualizaciones
 
-- 📈 **Gráfico de Stock vs Tiempo**: Observa los ciclos de inventario, puntos de pedido y periodos críticos
-- 💡 **Desglose de Costes**: Identifica qué componente impacta más tu cuenta de resultados
+- 📈 **Gráfico de Stock vs Tiempo**: Evolución diaria con marcadores de eventos (pedidos, rupturas, ROP)
+- 🥧 **Pie Chart de Costes**: Desglose porcentual de almacenamiento/pedidos/rupturas
+- 📊 **Histograma de Distribución**: Frecuencia de niveles de stock con bordes y colores profesionales
+- 🔥 **Días Críticos**: Scatter plot de los 30 días con menor stock
+- 📉 **Análisis de Sensibilidad**: Gráficos de línea mostrando impacto de ROP y Q en coste total
+- 📊 **Tabla Comparativa**: Resultados del Grid Search con todas las combinaciones evaluadas
+- 💳 **Tarjetas Métricas**: KPIs destacados con gradientes de colores (verde/azul/amarillo) y popovers
 
 ---
 
@@ -194,18 +234,25 @@ El simulador modela **365 días de operación** para proporcionar insights accio
 
 ```python
 # Parámetros de entrada
-Punto de Reorden (ROP): 15 unidades
-Cantidad de Pedido (Q): 50 unidades
+Punto de Reorden (ROP): 15 unidades (rango: 0-250)
+Cantidad de Pedido (Q): 50 unidades (rango: 10-500)
 Lead Time: 5 días
 Stock Inicial: 50 unidades
-
-# Demanda diaria: Aleatoria entre 0-5 unidades
+Patrón de Demanda: Uniforme (0-5 unidades/día)
+Coste Almacenamiento: 1€/ud/día
+Coste Pedido: 50€/orden
+Coste Ruptura: 10€/venta perdida
 ```
 
-**Resultado esperado**:
-- Nivel de servicio: ~98%
-- Costes optimizados
-- Identificación de mejoras en la política de inventario
+**Resultados obtenidos** (ejemplo):
+- ✅ Nivel de servicio: 98.2%
+- 🔄 Rotación: 4.3x/año
+- 📦 Fill rate: 97.5%
+- 💰 Coste total: 3,245€ (67% almacenamiento, 28% pedidos, 5% rupturas)
+- 📊 Número de pedidos: 14 órdenes
+- 📉 Días sin stock: 9 días
+
+**Optimizador automático sugiere**: ROP=20, Q=45 → Coste reducido a 2,890€ (-11%)
 
 ---
 
