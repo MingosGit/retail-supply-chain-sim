@@ -11,7 +11,7 @@
 
 *Toma decisiones basadas en datos. Minimiza costes. Maximiza el nivel de servicio.*
 
-[🚀 Demo en vivo](#instalación-y-uso-local) • [📊 Características](#características-principales) • [🛠️ Tecnologías](#stack-tecnológico)
+[🚀 Instalación](#-instalación-y-uso-local) • [📊 Características](#-características-principales) • [🛠️ Stack Tecnológico](#️-stack-tecnológico)
 
 </div>
 
