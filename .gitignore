@@ -1,0 +1,6 @@
+# Archivos de entorno virtual
+venv/
+__pycache__/
+
+# Archivos de sistema
+.DS_Store
