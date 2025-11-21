@@ -81,12 +81,6 @@ order_quantity = st.sidebar.slider(
     help="Cantidad fija de unidades que se solicitan en cada orden (Lote económico). \n\nSi Q es alto: Se piden pocas veces al año (Bajo coste de pedido) pero se acumula mucho stock (Alto coste de almacenamiento). \nSi Q es bajo: Se pide muchas veces (Alto coste de pedido) pero se mantiene poco stock."
 )
 
-# Mostrar recomendación EOQ en tiempo real (si ya hay costes configurados)
-if 'eoq' in st.session_state and st.session_state.eoq > 0:
-    eoq_value = st.session_state.eoq
-    if abs(order_quantity - eoq_value) > eoq_value * 0.2:
-        st.sidebar.info(f"💡 Sugerencia: EOQ óptimo = {eoq_value:.0f} uds")
-
 lead_time = st.sidebar.slider(
     "Tiempo de Entrega (Días)", 
     1, 14, 5,
@@ -180,6 +174,10 @@ stockout_cost_per_unit = st.sidebar.number_input(
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 🎯 Asistente Inteligente")
 
+# Inicializar EOQ si no existe
+if 'eoq' not in st.session_state:
+    st.session_state.eoq = 0
+
 # Cálculo EOQ
 if demand_type == "uniform":
     annual_demand_estimate = 2.5 * 365  # Promedio de 0-5
@@ -253,14 +251,14 @@ if enable_optimizer:
             "ROP Mínimo", 
             value=5, 
             min_value=0, 
-            max_value=50,
+            max_value=250,
             help="Valor mínimo de Punto de Reorden a evaluar en la búsqueda."
         )
         rop_max = st.number_input(
             "ROP Máximo", 
             value=25, 
             min_value=0, 
-            max_value=50,
+            max_value=250,
             help="Valor máximo de Punto de Reorden a evaluar en la búsqueda."
         )
         rop_step = st.number_input(
@@ -276,14 +274,14 @@ if enable_optimizer:
             "Q Mínimo", 
             value=20, 
             min_value=10, 
-            max_value=100,
+            max_value=500,
             help="Valor mínimo de Cantidad de Pedido a evaluar."
         )
         q_max = st.number_input(
             "Q Máximo", 
             value=80, 
             min_value=10, 
-            max_value=100,
+            max_value=500,
             help="Valor máximo de Cantidad de Pedido a evaluar."
         )
         q_step = st.number_input(
@@ -382,7 +380,7 @@ if enable_comparison:
     scenarios = [
         {"name": "Conservador", "rop": reorder_point + 10, "q": order_quantity, "lt": lead_time},
         {"name": "Actual", "rop": reorder_point, "q": order_quantity, "lt": lead_time},
-        {"name": "Agresivo", "rop": max(0, reorder_point - 10), "q": int(eoq) if 'eoq' in locals() else order_quantity, "lt": lead_time}
+        {"name": "Agresivo", "rop": max(0, reorder_point - 10), "q": int(st.session_state.get('eoq', order_quantity)), "lt": lead_time}
     ]
     
     comparison_results = []
@@ -629,7 +627,7 @@ if 'simulation_results' in st.session_state:
         
         max_cost_type = cost_breakdown.loc[cost_breakdown['Importe (€)'].idxmax(), 'Tipo de Coste']
         max_cost_value = cost_breakdown['Importe (€)'].max()
-        max_cost_pct = (max_cost_value / total_cost) * 100
+        max_cost_pct = (max_cost_value / total_cost * 100) if total_cost > 0 else 0
         
         if max_cost_type == "Almacenamiento":
             st.info(f"🔍 **{max_cost_pct:.1f}%** de tus costes son de almacenamiento. Considera reducir Q o ROP.")
@@ -947,8 +945,8 @@ OPERACIONES:
             )
             fig_q_sens.add_vline(x=sim_order_quantity, line_dash="dash", line_color="red",
                                 annotation_text="Q actual")
-            if 'eoq' in locals():
-                fig_q_sens.add_vline(x=eoq, line_dash="dot", line_color="green",
+            if 'eoq' in st.session_state and st.session_state.eoq > 0:
+                fig_q_sens.add_vline(x=st.session_state.eoq, line_dash="dot", line_color="green",
                                     annotation_text="EOQ")
             st.plotly_chart(fig_q_sens, use_container_width=True)
         
