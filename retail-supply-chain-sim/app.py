@@ -148,7 +148,7 @@ if enable_seasonality:
         seasonality = None
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("### 💰 Estructura de Costes")
+st.sidebar.markdown("### 💰 Estructura de Costes (€)")
 
 ordering_cost_per_order = st.sidebar.number_input(
     "Coste por Pedido (Logística)", 
@@ -441,6 +441,51 @@ for warning in validation_warnings:
 for error in validation_errors:
     st.error(error)
 
+# ============================================================================
+# DATOS SEMILLA: Ejecutar simulación automáticamente al inicio (Requisito #1)
+# ============================================================================
+if 'simulation_results' not in st.session_state:
+    # Parámetros por defecto profesionales (caso de éxito demostrable)
+    df_results, lost_sales, total_sales, num_orders = run_simulation(
+        reorder_point=15, 
+        order_quantity=50, 
+        lead_time=5,
+        demand_type="normal", 
+        demand_mean=2.5, 
+        demand_std=1.5,
+        seasonality=None
+    )
+    
+    # Cálculos económicos con parámetros por defecto
+    avg_inventory = df_results['stock'].mean()
+    default_holding = 1.0
+    default_ordering = 50.0
+    default_stockout = 10.0
+    
+    total_holding_cost = avg_inventory * default_holding
+    total_ordering_cost = num_orders * default_ordering
+    total_stockout_cost = lost_sales * default_stockout
+    total_cost = total_holding_cost + total_ordering_cost + total_stockout_cost
+    
+    # Guardar resultados iniciales
+    st.session_state['simulation_results'] = {
+        'df_results': df_results,
+        'lost_sales': lost_sales,
+        'total_sales': total_sales,
+        'num_orders': num_orders,
+        'avg_inventory': avg_inventory,
+        'total_holding_cost': total_holding_cost,
+        'total_ordering_cost': total_ordering_cost,
+        'total_stockout_cost': total_stockout_cost,
+        'total_cost': total_cost,
+        'reorder_point': 15,
+        'order_quantity': 50,
+        'lead_time': 5,
+        'demand_type': "normal",
+        'demand_mean': 2.5,
+        'is_demo': True  # Marca para mostrar banner
+    }
+
 # Botón de simulación más destacado
 col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
 with col_btn2:
@@ -489,7 +534,8 @@ if run_button:
         'order_quantity': order_quantity,
         'lead_time': lead_time,
         'demand_type': demand_type,
-        'demand_mean': demand_mean
+        'demand_mean': demand_mean,
+        'is_demo': False  # Simulación manual del usuario
     }
 
 # Mostrar resultados si existen en session_state
@@ -509,6 +555,99 @@ if 'simulation_results' in st.session_state:
     sim_lead_time = results['lead_time']
     sim_demand_type = results['demand_type']
     sim_demand_mean = results['demand_mean']
+    is_demo = results.get('is_demo', False)
+    
+    # Banner de datos de demostración
+    if is_demo:
+        st.info("👁️ **Visualización de Demostración** | Estás viendo datos de ejemplo pre-cargados. Ajusta los parámetros en la barra lateral y haz clic en '🚀 EJECUTAR SIMULACIÓN' para ver tus propios resultados.", icon="ℹ️")
+
+    # ============================================================================
+    # TABLERO FINANCIERO (P&L) - Requisito #3: Valor Financiero
+    # ============================================================================
+    st.markdown("""
+    <div style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); 
+                padding: 2rem; border-radius: 10px; margin-bottom: 1.5rem;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);">
+        <h2 style="color: white; margin: 0 0 1rem 0; font-size: 1.8rem; font-weight: 700;">
+            💼 Tablero Financiero (P&L) - Año Completo
+        </h2>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Métricas financieras en formato P&L
+    col_pl1, col_pl2, col_pl3 = st.columns([2, 2, 1])
+    
+    with col_pl1:
+        st.markdown("""
+        <div style="background: white; padding: 1rem; border-radius: 8px; border-left: 4px solid #10b981;">
+            <p style="margin: 0; color: #6b7280; font-size: 0.85rem; font-weight: 600;">📊 INGRESOS POTENCIALES</p>
+        </div>
+        """, unsafe_allow_html=True)
+        total_demand = total_sales + lost_sales
+        potential_revenue = total_demand * 10  # Asumiendo 10€ precio venta
+        st.metric("Demanda Total Valorada", f"{potential_revenue:,.0f} €", 
+                 help=f"{total_demand} unidades demandadas × precio venta estimado")
+    
+    with col_pl2:
+        st.markdown("""
+        <div style="background: white; padding: 1rem; border-radius: 8px; border-left: 4px solid #dc2626;">
+            <p style="margin: 0; color: #6b7280; font-size: 0.85rem; font-weight: 600;">💸 COSTES OPERATIVOS</p>
+        </div>
+        """, unsafe_allow_html=True)
+        st.metric("Coste Total Anual", f"{total_cost:,.0f} €", 
+                 help="Suma de costes de almacenamiento + pedidos + rupturas de stock")
+    
+    with col_pl3:
+        st.markdown("""
+        <div style="background: white; padding: 1rem; border-radius: 8px; border-left: 4px solid #3b82f6;">
+            <p style="margin: 0; color: #6b7280; font-size: 0.85rem; font-weight: 600;">📈 IMPACTO</p>
+        </div>
+        """, unsafe_allow_html=True)
+        impact_pct = (total_cost / potential_revenue * 100) if potential_revenue > 0 else 0
+        st.metric("% Costes/Ingresos", f"{impact_pct:.1f}%",
+                 delta=f"-{100-impact_pct:.1f}% margen" if impact_pct < 100 else "⚠️ Pérdidas",
+                 delta_color="inverse")
+    
+    # Desglose de costes en tabla P&L
+    st.markdown("""
+    <div style="background: #f8fafc; padding: 1.5rem; border-radius: 8px; margin-top: 1rem;">
+        <h4 style="margin: 0 0 1rem 0; color: #1e293b; font-weight: 600;">💶 Desglose de Costes (€)</h4>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    pl_cols = st.columns([3, 2, 2, 1])
+    
+    with pl_cols[0]:
+        st.markdown("**Concepto**")
+        st.write("📦 Coste Almacenamiento")
+        st.write("🚚 Coste Pedidos")
+        st.write("⚠️ Coste Rupturas")
+        st.markdown("---")
+        st.markdown("**💰 COSTE TOTAL**")
+    
+    with pl_cols[1]:
+        st.markdown("**Importe (€)**")
+        st.write(f"{total_holding_cost:,.2f} €")
+        st.write(f"{total_ordering_cost:,.2f} €")
+        st.write(f"{total_stockout_cost:,.2f} €")
+        st.markdown("---")
+        st.markdown(f"**{total_cost:,.2f} €**")
+    
+    with pl_cols[2]:
+        st.markdown("**% del Total**")
+        st.write(f"{(total_holding_cost/total_cost*100):.1f}%" if total_cost > 0 else "0%")
+        st.write(f"{(total_ordering_cost/total_cost*100):.1f}%" if total_cost > 0 else "0%")
+        st.write(f"{(total_stockout_cost/total_cost*100):.1f}%" if total_cost > 0 else "0%")
+        st.markdown("---")
+        st.markdown("**100%**")
+    
+    with pl_cols[3]:
+        st.markdown("**Impacto**")
+        st.write("📊" if total_holding_cost == max(total_holding_cost, total_ordering_cost, total_stockout_cost) else "")
+        st.write("📊" if total_ordering_cost == max(total_holding_cost, total_ordering_cost, total_stockout_cost) else "")
+        st.write("⚠️" if total_stockout_cost > 0 else "✅")
+    
+    st.markdown("<br>", unsafe_allow_html=True)
 
     # --- RESULTADOS CON DISEÑO MEJORADO ---
     col_title, col_help = st.columns([4, 1])
@@ -993,17 +1132,17 @@ OPERACIONES:
         # Reporte Excel
         buffer_excel = io.BytesIO()
         with pd.ExcelWriter(buffer_excel, engine='openpyxl') as writer:
-            # Hoja 1: Resumen
+            # Hoja 1: Resumen Financiero (con símbolo €)
             summary_data = {
-                'Métrica': ['Coste Total', 'Coste Almacenamiento', 'Coste Pedidos', 
-                           'Coste Ruptura', 'Nivel de Servicio (%)', 'Ventas Totales', 
-                           'Ventas Perdidas', 'Número de Pedidos', 'Stock Promedio'],
-                'Valor': [f"{total_cost:.2f}", f"{total_holding_cost:.2f}", 
-                         f"{total_ordering_cost:.2f}", f"{total_stockout_cost:.2f}",
-                         f"{service_level:.1f}", total_sales, lost_sales, num_orders, 
-                         f"{avg_inventory:.2f}"]
+                'Métrica': ['💰 Coste Total', '📦 Coste Almacenamiento', '🚚 Coste Pedidos', 
+                           '⚠️ Coste Ruptura', '✅ Nivel de Servicio', '📊 Ventas Totales', 
+                           '❌ Ventas Perdidas', '📋 Número de Pedidos', '📈 Stock Promedio'],
+                'Valor': [f"{total_cost:,.2f} €", f"{total_holding_cost:,.2f} €", 
+                         f"{total_ordering_cost:,.2f} €", f"{total_stockout_cost:,.2f} €",
+                         f"{service_level:.1f}%", f"{total_sales} uds", f"{lost_sales} uds", 
+                         f"{num_orders} órdenes", f"{avg_inventory:.2f} uds"]
             }
-            pd.DataFrame(summary_data).to_excel(writer, sheet_name='Resumen', index=False)
+            pd.DataFrame(summary_data).to_excel(writer, sheet_name='Resumen Financiero', index=False)
             
             # Hoja 2: Datos diarios
             export_data.to_excel(writer, sheet_name='Datos Diarios', index=False)
@@ -1012,10 +1151,11 @@ OPERACIONES:
             params_data = {
                 'Parámetro': ['Punto de Reorden (ROP)', 'Cantidad de Pedido (Q)', 
                              'Lead Time', 'Tipo Demanda', 'Demanda Media', 
-                             'Coste Pedido', 'Coste Almacenamiento', 'Coste Ruptura'],
-                'Valor': [sim_reorder_point, sim_order_quantity, sim_lead_time, sim_demand_type, 
-                         sim_demand_mean, ordering_cost_per_order, holding_cost_per_unit_year, 
-                         stockout_cost_per_unit]
+                             'Coste Pedido', 'Coste Almacenamiento/año', 'Coste Ruptura'],
+                'Valor': [f"{sim_reorder_point} uds", f"{sim_order_quantity} uds", 
+                         f"{sim_lead_time} días", sim_demand_type, 
+                         f"{sim_demand_mean} uds/día", f"{ordering_cost_per_order:.2f} €", 
+                         f"{holding_cost_per_unit_year:.2f} €", f"{stockout_cost_per_unit:.2f} €"]
             }
             pd.DataFrame(params_data).to_excel(writer, sheet_name='Parámetros', index=False)
         
