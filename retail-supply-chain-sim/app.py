@@ -43,8 +43,8 @@ st.markdown("""
 
 st.markdown("""
 <div class="main-header">
-    <h1 style="margin:0; font-size: 2.5rem;">📦 Simulador de Cadena de Suministro</h1>
-    <p style="margin-top: 0.5rem; font-size: 1.1rem; opacity: 0.9;">Optimiza tu inventario y reduce costes operativos</p>
+    <h1 style="margin:0; font-size: 2.5rem; color: #FFFFFF; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">📦 Simulador de Cadena de Suministro</h1>
+    <p style="margin-top: 0.5rem; font-size: 1.1rem; color: #F8FAFC; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);">Optimiza tu inventario y reduce costes operativos</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -62,12 +62,9 @@ st.sidebar.markdown("""
 
 st.sidebar.markdown("### 🚚 Operaciones & Logística")
 
-# Aplicar valor sugerido si existe en session_state
-if 'suggested_q' in st.session_state:
-    default_q = st.session_state.suggested_q
-    del st.session_state.suggested_q
-else:
-    default_q = 50
+# Usar session_state para mantener el valor del slider entre ejecuciones
+if 'order_quantity_value' not in st.session_state:
+    st.session_state.order_quantity_value = 50
 
 reorder_point = st.sidebar.slider(
     "Punto de Reorden (ROP)", 
@@ -77,9 +74,13 @@ reorder_point = st.sidebar.slider(
 
 order_quantity = st.sidebar.slider(
     "Cantidad de Pedido (Q)", 
-    10, 500, default_q,
-    help="Cantidad fija de unidades que se solicitan en cada orden (Lote económico). \n\nSi Q es alto: Se piden pocas veces al año (Bajo coste de pedido) pero se acumula mucho stock (Alto coste de almacenamiento). \nSi Q es bajo: Se pide muchas veces (Alto coste de pedido) pero se mantiene poco stock."
+    10, 500, st.session_state.order_quantity_value,
+    help="Cantidad fija de unidades que se solicitan en cada orden (Lote económico). \n\nSi Q es alto: Se piden pocas veces al año (Bajo coste de pedido) pero se acumula mucho stock (Alto coste de almacenamiento). \nSi Q es bajo: Se pide muchas veces (Alto coste de pedido) pero se mantiene poco stock.",
+    key="order_quantity_slider"
 )
+
+# Actualizar session_state cuando el slider cambia
+st.session_state.order_quantity_value = order_quantity
 
 lead_time = st.sidebar.slider(
     "Tiempo de Entrega (Días)", 
@@ -202,18 +203,23 @@ st.sidebar.markdown("### 🎯 Asistente Inteligente")
 if 'eoq' not in st.session_state:
     st.session_state.eoq = 0
 
-# Cálculo EOQ
+# Cálculo EOQ (dinámico según demanda ajustada y costes actuales)
 if demand_type == "uniform":
-    annual_demand_estimate = 2.5 * 365  # Promedio de 0-5
+    annual_demand_estimate = 2.5 * 365 * demand_multiplier
 elif demand_type in ["normal", "poisson"]:
-    annual_demand_estimate = demand_mean * 365
+    annual_demand_estimate = demand_mean * 365 * demand_multiplier
 else:
-    annual_demand_estimate = 2.5 * 365
+    annual_demand_estimate = 2.5 * 365 * demand_multiplier
 
 if annual_demand_estimate > 0 and ordering_cost_per_order > 0 and holding_cost_per_unit_year > 0:
+    # Fórmula EOQ: √((2 × D × S) / H)
+    # D = Demanda anual, S = Coste por pedido, H = Coste almacenamiento
     eoq = math.sqrt((2 * annual_demand_estimate * ordering_cost_per_order) / holding_cost_per_unit_year)
     
-    # Guardar en session state para usarlo en el slider
+    # Mostrar cálculo para debugging
+    st.sidebar.caption(f"📐 D={annual_demand_estimate:.0f} | S={ordering_cost_per_order}€ | H={holding_cost_per_unit_year}€")
+    
+    # Guardar en session state
     st.session_state.eoq = eoq
     
     # Comparar con el valor actual
@@ -231,7 +237,7 @@ if annual_demand_estimate > 0 and ordering_cost_per_order > 0 and holding_cost_p
         
         # Botón destacado para aplicar
         if st.sidebar.button("✨ Usar Valor Óptimo (EOQ)", type="primary", use_container_width=True):
-            st.session_state.suggested_q = int(eoq)
+            st.session_state.order_quantity_value = int(eoq)
             st.rerun()
             
     else:
