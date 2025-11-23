@@ -93,9 +93,38 @@ Total Cost = (Holding Cost × Avg. Inventory) + (Ordering Cost × # Orders) + (S
 | 📈 **Visualización** | Plotly Express/GO | Gráficos interactivos (líneas, barras, histogramas, scatter, pie) |
 | 🌐 **Frontend** | Streamlit | Interfaz web con tabs, popovers, expanders, métricas |
 | 💾 **Exportación** | io, openpyxl | Generación de reportes Excel/TXT |
-| 🎨 **Estilizado** | Custom CSS | Gradientes, sombras, diseño moderno |
+| 🎨 **Estilizado** | Custom CSS + config.toml | Gradientes, sombras, paleta corporativa |
 
 </div>
+
+---
+
+## 🎨 Diseño Visual Profesional
+
+Este simulador ha sido diseñado con **estándares corporativos** para eliminar la apariencia de "prototipo gratuito":
+
+### ✨ Características de Diseño
+
+- **🎨 Paleta Corporativa Coherente**: Azules oscuros (`#1E3A8A`), grises elegantes (`#F8FAFC`), colores de acento profesionales
+- **📱 Interfaz Moderna**: Gradientes sutiles, sombras suaves, bordes redondeados (10px)
+- **♿ Accesibilidad WCAG AA**: Contraste optimizado para máxima legibilidad (ratios >4.5:1)
+- **🎯 Tipografía Escalada**: Sans-serif profesional con jerarquía visual clara
+- **💡 UX Mejorada**: Tooltips contextuales, estados hover, feedback visual, toolbar minimalista
+
+### 🔧 Configuración Personalizable
+
+La estética se gestiona mediante `retail-supply-chain-sim/.streamlit/config.toml`:
+
+```toml
+[theme]
+primaryColor = "#1E3A8A"        # Azul corporativo
+backgroundColor = "#FFFFFF"      # Fondo nítido
+secondaryBackgroundColor = "#F8FAFC"  # Gris elegante
+textColor = "#1E293B"           # Texto contrastado
+font = "sans serif"
+```
+
+📚 **[Ver documentación completa de diseño →](retail-supply-chain-sim/.streamlit/README.md)**
 
 ---
 
@@ -104,8 +133,14 @@ Total Cost = (Holding Cost × Avg. Inventory) + (Ordering Cost × # Orders) + (S
 ```
 retail-supply-chain-sim/
 │
-├── 📄 app.py                    # 🎨 Interfaz Streamlit (UI/UX)
-├── 📄 simulation.py             # 🧠 Motor de simulación (lógica core)
+├── retail-supply-chain-sim/
+│   ├── .streamlit/
+│   │   ├── config.toml          # 🎨 Configuración de tema profesional
+│   │   └── README.md            # 📚 Documentación de diseño visual
+│   ├── 📄 app.py                # 🎨 Interfaz Streamlit (UI/UX)
+│   ├── 📄 simulation.py         # 🧠 Motor de simulación (lógica core)
+│   └── 📄 requirements.txt      # 📦 Dependencias del módulo
+│
 ├── 📄 requirements.txt          # 📦 Dependencias Python
 ├── 📄 README.md                 # 📖 Este archivo
 └── 📄 LICENSE                   # ⚖️ Licencia MIT

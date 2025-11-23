@@ -1,0 +1,72 @@
+# ============================================================================
+# CONFIGURACIÓN VISUAL PROFESIONAL - RETAIL SUPPLY CHAIN SIMULATOR
+# ============================================================================
+# Paleta corporativa moderna que elimina la apariencia de "prototipo gratuito"
+# Colores profesionales optimizados para presentaciones ejecutivas
+# ============================================================================
+
+[theme]
+# Color primario: Azul corporativo profundo
+primaryColor = "#1E3A8A"  # Azul oscuro profesional para botones y elementos interactivos
+
+# Color de fondo: Blanco nítido para máxima legibilidad
+backgroundColor = "#FFFFFF"
+
+# Color de fondo secundario: Gris claro elegante para secciones
+secondaryBackgroundColor = "#F8FAFC"
+
+# Color de texto: Negro/Gris oscuro para contraste óptimo
+textColor = "#1E293B"
+
+# Fuente: Sans-serif moderna y profesional
+font = "sans serif"
+
+# ============================================================================
+# CONFIGURACIÓN DE LA APLICACIÓN
+# ============================================================================
+
+[server]
+# Mejora el rendimiento y la experiencia del usuario
+headless = true
+port = 8501
+# CORS habilitado para compatibilidad con XSRF protection
+enableCORS = true
+enableXsrfProtection = true
+
+# ============================================================================
+# CONFIGURACIÓN DE LA INTERFAZ
+# ============================================================================
+
+[browser]
+# Título profesional en la pestaña del navegador
+gatherUsageStats = false
+
+[runner]
+# Mejora la velocidad de actualización
+magicEnabled = true
+fastReruns = true
+
+# ============================================================================
+# CONFIGURACIÓN DEL CLIENTE
+# ============================================================================
+
+[client]
+# Mejora la experiencia visual
+showErrorDetails = false
+toolbarMode = "minimal"
+
+# ============================================================================
+# NOTAS DE DISEÑO
+# ============================================================================
+# Paleta de colores corporativa:
+# - Primario (#1E3A8A): Azul oscuro profesional - confianza, tecnología
+# - Fondo (#FFFFFF): Blanco nítido - claridad, profesionalismo
+# - Secundario (#F8FAFC): Gris claro - elegancia, modernidad
+# - Texto (#1E293B): Gris carbón - legibilidad óptima
+#
+# Esta configuración ha sido optimizada para:
+# ✓ Presentaciones ejecutivas
+# ✓ Reportes profesionales
+# ✓ Ambiente corporativo
+# ✓ Máxima legibilidad y contraste WCAG AA
+# ============================================================================
