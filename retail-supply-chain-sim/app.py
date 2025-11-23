@@ -118,6 +118,30 @@ if demand_type in ["normal", "poisson"]:
             help="Variabilidad de la demanda. Mayor valor = mayor incertidumbre."
         )
 
+# ============================================================================
+# WHAT-IF INTERACTIVO: Escenarios de Demanda en Tiempo Real
+# ============================================================================
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 🎯 Análisis What-If")
+
+demand_multiplier = st.sidebar.slider(
+    "📈 Escenario de Demanda",
+    min_value=0.5,
+    max_value=2.0,
+    value=1.0,
+    step=0.05,
+    help="Simula cambios en la demanda y observa el impacto inmediato en costes y rentabilidad.\n\n• 1.0 = Demanda Normal (Base)\n• 1.2 = +20% (Campaña Marketing, Black Friday)\n• 0.8 = -20% (Recesión, Temporada Baja)\n\nLos resultados se actualizan automáticamente al ejecutar la simulación."
+)
+
+# Visualización del cambio porcentual
+demand_change_pct = (demand_multiplier - 1.0) * 100
+if demand_change_pct > 0:
+    st.sidebar.success(f"📊 Simulando: **+{demand_change_pct:.0f}%** de demanda")
+elif demand_change_pct < 0:
+    st.sidebar.warning(f"📊 Simulando: **{demand_change_pct:.0f}%** de demanda")
+else:
+    st.sidebar.info("📊 Escenario: **Base** (sin cambios)")
+
 enable_seasonality = st.sidebar.checkbox(
     "🍃 Estacionalidad",
     help="Activa patrones estacionales que simulan picos y valles de demanda durante el año, como aumentos en Navidad o rebajas de verano. Esto permite analizar cómo afectan las temporadas a la gestión de inventario."
@@ -483,6 +507,7 @@ if 'simulation_results' not in st.session_state:
         'lead_time': 5,
         'demand_type': "normal",
         'demand_mean': 2.5,
+        'demand_multiplier': 1.0,
         'is_demo': True  # Marca para mostrar banner
     }
 
@@ -497,10 +522,13 @@ with col_btn2:
     )
 
 if run_button:
+    # Aplicar multiplicador What-If a la demanda
+    adjusted_demand_mean = demand_mean * demand_multiplier
+    
     # Obtenemos el nuevo valor num_orders
     df_results, lost_sales, total_sales, num_orders = run_simulation(
         reorder_point, order_quantity, lead_time,
-        demand_type=demand_type, demand_mean=demand_mean, demand_std=demand_std,
+        demand_type=demand_type, demand_mean=adjusted_demand_mean, demand_std=demand_std,
         seasonality=seasonality
     )
     
@@ -534,7 +562,8 @@ if run_button:
         'order_quantity': order_quantity,
         'lead_time': lead_time,
         'demand_type': demand_type,
-        'demand_mean': demand_mean,
+        'demand_mean': adjusted_demand_mean,
+        'demand_multiplier': demand_multiplier,
         'is_demo': False  # Simulación manual del usuario
     }
 
@@ -555,11 +584,20 @@ if 'simulation_results' in st.session_state:
     sim_lead_time = results['lead_time']
     sim_demand_type = results['demand_type']
     sim_demand_mean = results['demand_mean']
+    sim_demand_multiplier = results.get('demand_multiplier', 1.0)
     is_demo = results.get('is_demo', False)
     
     # Banner de datos de demostración
     if is_demo:
         st.info("👁️ **Visualización de Demostración** | Estás viendo datos de ejemplo pre-cargados. Ajusta los parámetros en la barra lateral y haz clic en '🚀 EJECUTAR SIMULACIÓN' para ver tus propios resultados.", icon="ℹ️")
+    
+    # Banner de escenario What-If activo
+    if sim_demand_multiplier != 1.0:
+        whatif_change = (sim_demand_multiplier - 1.0) * 100
+        if whatif_change > 0:
+            st.warning(f"🎯 **Escenario What-If Activo**: Estás simulando un **aumento del {whatif_change:.0f}%** en la demanda ({sim_demand_mean/sim_demand_multiplier:.1f} → {sim_demand_mean:.1f} uds/día). Compara los costes con el escenario base para ver el impacto financiero.", icon="📊")
+        else:
+            st.info(f"🎯 **Escenario What-If Activo**: Estás simulando una **reducción del {abs(whatif_change):.0f}%** en la demanda ({sim_demand_mean/sim_demand_multiplier:.1f} → {sim_demand_mean:.1f} uds/día). Observa cómo se optimizan los costes en baja demanda.", icon="📊")
 
     # ============================================================================
     # TABLERO FINANCIERO (P&L) - Requisito #3: Valor Financiero
@@ -648,6 +686,133 @@ if 'simulation_results' in st.session_state:
         st.write("⚠️" if total_stockout_cost > 0 else "✅")
     
     st.markdown("<br>", unsafe_allow_html=True)
+
+    # ============================================================================
+    # ANÁLISIS WHAT-IF: Comparación con Escenario Base (ROI)
+    # ============================================================================
+    if sim_demand_multiplier != 1.0:
+        st.markdown("---")
+        st.markdown("### 🔄 Análisis Comparativo: What-If vs Escenario Base")
+        
+        # Calcular escenario base (demanda sin multiplicador)
+        with st.spinner("Calculando impacto del escenario What-If..."):
+            base_demand_mean = sim_demand_mean / sim_demand_multiplier
+            df_base, lost_base, total_base, orders_base = run_simulation(
+                sim_reorder_point, sim_order_quantity, sim_lead_time,
+                demand_type=sim_demand_type, demand_mean=base_demand_mean, demand_std=demand_std,
+                seasonality=seasonality
+            )
+            
+            avg_inv_base = df_base['stock'].mean()
+            h_cost_base = avg_inv_base * holding_cost_per_unit_year
+            o_cost_base = orders_base * ordering_cost_per_order
+            s_cost_base = lost_base * stockout_cost_per_unit
+            total_cost_base = h_cost_base + o_cost_base + s_cost_base
+            
+            total_demand_base = total_base + lost_base
+            potential_revenue_base = total_demand_base * 10
+            service_level_base = (total_base / total_demand_base * 100) if total_demand_base > 0 else 0
+        
+        # Métricas comparativas lado a lado
+        st.markdown("""<div style="background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%); 
+                    padding: 1rem; border-radius: 10px; margin-bottom: 1rem;">
+            <h4 style="color: white; margin: 0; text-align: center;">💡 Impacto Financiero del Cambio en Demanda</h4>
+        </div>""", unsafe_allow_html=True)
+        
+        comp_col1, comp_col2, comp_col3 = st.columns(3)
+        
+        with comp_col1:
+            st.markdown("**📊 Escenario Base**")
+            st.metric("Demanda Media", f"{base_demand_mean:.1f} uds/día")
+            st.metric("Coste Total", f"{total_cost_base:,.0f} €")
+            st.metric("Nivel Servicio", f"{service_level_base:.1f}%")
+            st.metric("Ventas Perdidas", f"{lost_base} uds")
+        
+        with comp_col2:
+            whatif_label = f"+{(sim_demand_multiplier-1)*100:.0f}%" if sim_demand_multiplier > 1 else f"{(sim_demand_multiplier-1)*100:.0f}%"
+            st.markdown(f"**🎯 Escenario What-If ({whatif_label})**")
+            st.metric("Demanda Media", f"{sim_demand_mean:.1f} uds/día", 
+                     delta=f"{sim_demand_mean - base_demand_mean:+.1f} uds")
+            st.metric("Coste Total", f"{total_cost:,.0f} €",
+                     delta=f"{total_cost - total_cost_base:+,.0f} €",
+                     delta_color="inverse")
+            total_demand_current = total_sales + lost_sales
+            service_level_current = (total_sales / total_demand_current * 100) if total_demand_current > 0 else 0
+            st.metric("Nivel Servicio", f"{service_level_current:.1f}%",
+                     delta=f"{service_level_current - service_level_base:+.1f}%")
+            st.metric("Ventas Perdidas", f"{lost_sales} uds",
+                     delta=f"{lost_sales - lost_base:+d} uds",
+                     delta_color="inverse")
+        
+        with comp_col3:
+            st.markdown("**📈 Impacto en ROI**")
+            
+            # Cálculo de ROI
+            potential_revenue_current = (total_sales + lost_sales) * 10
+            revenue_change = potential_revenue_current - potential_revenue_base
+            cost_change = total_cost - total_cost_base
+            roi_impact = revenue_change - cost_change
+            
+            st.metric("Δ Ingresos Potenciales", f"{revenue_change:+,.0f} €",
+                     help="Cambio en ingresos por variación de demanda")
+            st.metric("Δ Costes Operativos", f"{cost_change:+,.0f} €",
+                     delta_color="inverse",
+                     help="Cambio en costes totales")
+            st.metric("ROI Neto Estimado", f"{roi_impact:+,.0f} €",
+                     delta=f"{(roi_impact/potential_revenue_base*100):+.1f}%" if potential_revenue_base > 0 else "N/A",
+                     help="Impacto neto: (Δ Ingresos - Δ Costes)")
+            
+            if roi_impact > 0:
+                st.success("✅ Escenario rentable")
+            elif roi_impact < 0:
+                st.error("⚠️ Escenario menos rentable")
+            else:
+                st.info("➡️ ROI neutro")
+        
+        # Gráfico comparativo de costes
+        st.markdown("#### 📊 Comparación Visual de Costes")
+        
+        comparison_data = pd.DataFrame([
+            {"Escenario": "Base", "Almacenamiento": h_cost_base, "Pedidos": o_cost_base, "Rupturas": s_cost_base},
+            {"Escenario": f"What-If ({whatif_label})", "Almacenamiento": total_holding_cost, "Pedidos": total_ordering_cost, "Rupturas": total_stockout_cost}
+        ])
+        
+        fig_comparison = go.Figure()
+        fig_comparison.add_trace(go.Bar(name='Almacenamiento', x=comparison_data['Escenario'], 
+                                       y=comparison_data['Almacenamiento'], marker_color='#06b6d4'))
+        fig_comparison.add_trace(go.Bar(name='Pedidos', x=comparison_data['Escenario'], 
+                                       y=comparison_data['Pedidos'], marker_color='#a78bfa'))
+        fig_comparison.add_trace(go.Bar(name='Rupturas', x=comparison_data['Escenario'], 
+                                       y=comparison_data['Rupturas'], marker_color='#f87171'))
+        
+        fig_comparison.update_layout(
+            barmode='group',
+            title="Desglose de Costes: Base vs What-If",
+            xaxis_title="Escenario",
+            yaxis_title="Coste (€)",
+            height=400
+        )
+        st.plotly_chart(fig_comparison, use_container_width=True)
+        
+        # Recomendaciones automáticas
+        st.markdown("#### 💡 Recomendaciones Estratégicas")
+        
+        if sim_demand_multiplier > 1.0:
+            # Aumento de demanda
+            if lost_sales > lost_base * 1.5:
+                st.warning(f"⚠️ **Alerta**: Las ventas perdidas aumentaron {((lost_sales/lost_base-1)*100):.0f}% con el incremento de demanda. Considera **aumentar el ROP a {sim_reorder_point + 10}** para mejorar el nivel de servicio.")
+            if total_cost > total_cost_base * 1.3:
+                st.info(f"📊 Los costes aumentaron {((total_cost/total_cost_base-1)*100):.0f}%. Esto es normal con mayor demanda. El ROI neto {'es positivo ✅' if roi_impact > 0 else 'requiere optimización ⚠️'}.")
+            if service_level_current < 90:
+                st.error(f"🎯 **Nivel de servicio crítico**: {service_level_current:.1f}%. Con {whatif_label} de demanda, necesitas más stock de seguridad. Prueba ROP={sim_reorder_point + 15}.")
+        else:
+            # Reducción de demanda
+            if total_holding_cost > h_cost_base * 0.8:
+                st.info(f"💰 Oportunidad de ahorro: Con {whatif_label} de demanda, puedes reducir el ROP a {max(5, sim_reorder_point - 5)} para optimizar costes de almacenamiento.")
+            if lost_sales < lost_base * 0.5:
+                st.success(f"✅ Excelente: Las rupturas se redujeron {abs((lost_sales/lost_base-1)*100):.0f}%. El inventario actual está bien dimensionado para demanda baja.")
+        
+        st.markdown("---")
 
     # --- RESULTADOS CON DISEÑO MEJORADO ---
     col_title, col_help = st.columns([4, 1])
