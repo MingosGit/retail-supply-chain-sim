@@ -805,18 +805,28 @@ if 'simulation_results' in st.session_state:
         
         if sim_demand_multiplier > 1.0:
             # Aumento de demanda
-            if lost_sales > lost_base * 1.5:
-                st.warning(f"⚠️ **Alerta**: Las ventas perdidas aumentaron {((lost_sales/lost_base-1)*100):.0f}% con el incremento de demanda. Considera **aumentar el ROP a {sim_reorder_point + 10}** para mejorar el nivel de servicio.")
-            if total_cost > total_cost_base * 1.3:
-                st.info(f"📊 Los costes aumentaron {((total_cost/total_cost_base-1)*100):.0f}%. Esto es normal con mayor demanda. El ROI neto {'es positivo ✅' if roi_impact > 0 else 'requiere optimización ⚠️'}.")
+            if lost_base > 0 and lost_sales > lost_base * 1.5:
+                pct_increase = ((lost_sales/lost_base-1)*100)
+                st.warning(f"⚠️ **Alerta**: Las ventas perdidas aumentaron {pct_increase:.0f}% con el incremento de demanda. Considera **aumentar el ROP a {sim_reorder_point + 10}** para mejorar el nivel de servicio.")
+            elif lost_sales > 10:
+                st.warning(f"⚠️ **Alerta**: {lost_sales} ventas perdidas con el incremento de demanda. Considera **aumentar el ROP a {sim_reorder_point + 10}** para mejorar el nivel de servicio.")
+            
+            if total_cost_base > 0 and total_cost > total_cost_base * 1.3:
+                pct_cost_increase = ((total_cost/total_cost_base-1)*100)
+                st.info(f"📊 Los costes aumentaron {pct_cost_increase:.0f}%. Esto es normal con mayor demanda. El ROI neto {'es positivo ✅' if roi_impact > 0 else 'requiere optimización ⚠️'}.")
+            
             if service_level_current < 90:
                 st.error(f"🎯 **Nivel de servicio crítico**: {service_level_current:.1f}%. Con {whatif_label} de demanda, necesitas más stock de seguridad. Prueba ROP={sim_reorder_point + 15}.")
         else:
             # Reducción de demanda
-            if total_holding_cost > h_cost_base * 0.8:
+            if h_cost_base > 0 and total_holding_cost > h_cost_base * 0.8:
                 st.info(f"💰 Oportunidad de ahorro: Con {whatif_label} de demanda, puedes reducir el ROP a {max(5, sim_reorder_point - 5)} para optimizar costes de almacenamiento.")
-            if lost_sales < lost_base * 0.5:
-                st.success(f"✅ Excelente: Las rupturas se redujeron {abs((lost_sales/lost_base-1)*100):.0f}%. El inventario actual está bien dimensionado para demanda baja.")
+            
+            if lost_base > 0 and lost_sales < lost_base * 0.5:
+                pct_reduction = abs((lost_sales/lost_base-1)*100)
+                st.success(f"✅ Excelente: Las rupturas se redujeron {pct_reduction:.0f}%. El inventario actual está bien dimensionado para demanda baja.")
+            elif lost_sales == 0:
+                st.success(f"✅ Perfecto: Sin rupturas de stock. El inventario está bien dimensionado para esta demanda.")
         
         st.markdown("---")
 
